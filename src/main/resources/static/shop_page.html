@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>線上購物</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 0;
+      margin: 0;
+      background-color: #f4f7f6;
+      color: #333;
+    }
+
+    .navbar {
+      background-color: #333;
+      padding: 10px 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    .navbar a, .navbar .dropdown > span {
+      color: #fff;
+      text-decoration: none;
+      font-family: 'Roboto', 'Arial', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      padding: 10px 15px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .navbar a:hover, .navbar .dropdown:hover > span {
+      background-color: #555;
+      color: #fff;
+      border-radius: 5px;
+    }
+
+    .dropdown {
+      position: relative;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #333;
+      min-width: 160px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      z-index: 1001;
+      top: 100%;
+      left: 0;
+      border-radius: 5px;
+    }
+
+    .dropdown-content a {
+      color: #fff;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+      transition: background-color 0.3s;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #555;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    #product-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+      padding: 10px;
+    }
+
+    .product {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 15px;
+      background-color: #fff;
+      text-align: center;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      overflow: hidden;
+    }
+
+    .product:hover {
+      transform: scale(1.05);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .product img {
+      width: 100%;
+      height: 150px;
+      object-fit: contain;
+      border-radius: 5px;
+      margin-bottom: 10px;
+    }
+
+    .product h3 {
+      color: #333;
+      font-size: 18px;
+      margin: 10px 0;
+    }
+
+    .product p {
+      color: #666;
+      font-size: 14px;
+      margin: 5px 0;
+    }
+
+    #cart-list {
+      margin-top: 30px;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .cart-item {
+      display: flex;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 1px solid #eee;
+      gap: 15px;
+    }
+
+    .cart-item:last-child {
+      border-bottom: none;
+    }
+
+    .cart-item img {
+      width: 60px;
+      height: 60px;
+      object-fit: contain;
+      border-radius: 5px;
+    }
+
+    .cart-item-details {
+      flex-grow: 1;
+    }
+
+    .cart-item-details p {
+      margin: 5px 0;
+      color: #333;
+    }
+
+    button {
+      padding: 10px 20px;
+      cursor: pointer;
+      background: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 14px;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+
+    button:hover {
+      background: #0056b3;
+      transform: translateY(-2px);
+    }
+
+    .cart-item button {
+      padding: 8px 12px;
+      font-size: 12px;
+      background: #6c757d;
+    }
+
+    .cart-item button:hover {
+      background: #5a6268;
+    }
+
+    .checkout-btn {
+      background-color: #28a745;
+      margin: 10px 0;
+    }
+
+    .checkout-btn:hover {
+      background-color: #218838;
+    }
+
+    #cart-list p.empty-cart {
+      text-align: center;
+      color: #666;
+      font-size: 16px;
+    }
+
+    .action-buttons {
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <div class="dropdown">
+        <span>會員中心</span>
+        <div class="dropdown-content">
+          <a href="/user_profile">會員資料</a>
+          <a href="#">會員資料修改(demo)</a>
+        </div>
+    </div>
+    <div class="dropdown">
+        <span>商品頁面</span>
+        <div class="dropdown-content">
+          <a href="/shop_page">商品: 廚具</a>
+          <a href="#">商品: 3C (demo)</a>
+          <a href="#">商品: 家電 (demo)</a>
+        </div>
+    </div>
+    <div class="dropdown">
+      <span>付款頁面</span>
+      <div class="dropdown-content">
+        <a href="/linepay_pay">Line Pay 頁面</a>
+        <a href="#">Apple Pay 頁面(demo)</a>
+        <a href="#">台灣 Pay 頁面(demo)</a>
+      </div>
+    </div>
+    <a href="#" class="logout-btn" id="logoutBtn">登出</a>
+  </div>
+
+  <div class="container">
+    <h1>商品列表</h1>
+    <div id="product-list"></div>
+
+    <h2>🛒 購物車</h2>
+    <div id="cart-list"></div>
+    <div class="action-buttons">
+      <button onclick="clearCart()">清空購物車</button>
+      <button class="checkout-btn" onclick="goToCheckout()">前往付款</button>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+      fetch('/oauth2/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          localStorage.removeItem('jwt_token');
+          var logoutWindow = window.open('https://accounts.google.com/Logout', '_blank', 'width=500,height=600');
+          setTimeout(function() {
+            if (logoutWindow) logoutWindow.close();
+            window.location.href = '/user_login';
+          }, 3000);
+        } else {
+          alert('登出失敗，請稍後再試。');
+        }
+      })
+      .catch(error => {
+        console.error('登出錯誤:', error);
+        alert('登出過程中發生錯誤，請稍後再試。');
+      });
+    });
+
+    $(document).ready(function () {
+      const token = localStorage.getItem("jwt_token");
+      if (!token) {
+        alert("請先登入！");
+        window.location.href = "/user_login";
+        return;
+      }
+
+      $.ajaxSetup({
+        beforeSend: function(xhr) {
+          xhr.setRequestHeader("Authorization", "Bearer " + token);
+        }
+      });
+
+      loadProducts();
+      loadCart();
+    });
+
+    function loadProducts() {
+      $.ajax({
+        url: "/products",
+        type: "GET",
+        success: function (data) {
+          let productList = $("#product-list");
+          productList.empty();
+          data.forEach(product => {
+            productList.append(`
+              <div class="product">
+                <img src="${product.imageUrl || 'https://via.placeholder.com/150'}" alt="${product.name}">
+                <h3>${product.name}</h3>
+                <p>價格：$${product.price}</p>
+                <button onclick="addToCart('${product.id}', '${product.name}', ${product.price}, '${product.imageUrl || ''}')">加入購物車</button>
+              </div>
+            `);
+          });
+        },
+        error: function(xhr) {
+          if (xhr.status === 401 || xhr.status === 403) {
+            alert("請重新登入！");
+            window.location.href = "/user_login";
+          }
+        }
+      });
+    }
+
+    function addToCart(id, name, price, imageUrl) {
+      let cartItemArray = [{
+        id: id,
+        name: name,
+        imageUrl: imageUrl,
+        price: price,
+        quantity: 1
+      }];
+      
+      $.ajax({
+        url: "/cart/add",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify(cartItemArray),
+        success: function () {
+          alert(`${name} 已加入購物車`);
+          loadCart();
+        },
+        error: function(xhr) {
+          if (xhr.status === 401 || xhr.status === 403) {
+            alert("請重新登入！");
+            window.location.href = "/user_login";
+          } else {
+            alert("加入購物車失敗");
+          }
+        }
+      });
+    }
+
+    function loadCart() {
+      $.ajax({
+        url: "/cart/items",
+        type: "GET",
+        success: function (data) {
+          let cartList = $("#cart-list");
+          cartList.empty();
+
+          if (data.length === 0) {
+            cartList.append("<p class='empty-cart'>購物車是空的</p>");
+            return;
+          }
+
+          let cartMap = {};
+          data.forEach(item => {
+            if (cartMap[item.id]) {
+              cartMap[item.id].quantity += item.quantity;
+            } else {
+              cartMap[item.id] = { ...item };
+            }
+          });
+
+          Object.values(cartMap).forEach(item => {
+            cartList.append(`
+              <div class="cart-item">
+                <img src="${item.imageUrl || 'https://via.placeholder.com/60'}" alt="${item.name}">
+                <div class="cart-item-details">
+                  <p>商品：${item.name}</p>
+                  <p>數量：${item.quantity} | 價格：$${item.price * item.quantity}</p>
+                </div>
+              </div>
+            `);
+          });
+        },
+        error: function(xhr) {
+          if (xhr.status === 401 || xhr.status === 403) {
+            alert("請重新登入！");
+            window.location.href = "/user_login";
+          }
+        }
+      });
+    }
+
+    function clearCart() {
+      $.ajax({
+        url: "/cart/clear",
+        type: "POST",
+        success: function () {
+          alert("購物車已清空");
+          loadCart();
+        },
+        error: function(xhr) {
+          if (xhr.status === 401 || xhr.status === 403) {
+            alert("請重新登入！");
+            window.location.href = "/user_login";
+          }
+        }
+      });
+    }
+
+    function goToCheckout() {
+      window.location.href = "/linepay_pay";
+    }
+  </script>
+
+</body>
+</html>

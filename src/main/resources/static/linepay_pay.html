@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>付款頁面</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 0;
+      margin: 0;
+      background-color: #f4f7f6;
+      color: #333;
+      text-align: center;
+    }
+
+    .navbar {
+      background-color: #333;
+      padding: 10px 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+    }
+
+    .navbar a, .navbar .dropdown > span {
+      color: #fff;
+      text-decoration: none;
+      font-family: 'Roboto', 'Arial', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      padding: 10px 15px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .navbar a:hover, .navbar .dropdown:hover > span {
+      background-color: #555;
+      color: #fff;
+      border-radius: 5px;
+    }
+
+    .dropdown {
+      position: relative;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background-color: #333;
+      min-width: 160px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      z-index: 1001;
+      top: 100%;
+      left: 0;
+      border-radius: 5px;
+    }
+
+    .dropdown-content a {
+      color: #fff;
+      padding: 12px 16px;
+      text-decoration: none;
+      display: block;
+      transition: background-color 0.3s;
+    }
+
+    .dropdown-content a:hover {
+      background-color: #555;
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    .container {
+      width: 80%;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 30px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #333;
+    }
+
+    .btn {
+      background-color: #007BFF;
+      color: white;
+      padding: 12px 25px;
+      font-size: 18px;
+      margin: 20px auto;
+      display: block;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      width: 50%;
+      max-width: 300px;
+      text-align: center;
+      text-decoration: none;
+    }
+
+    .btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="navbar">
+    <div class="dropdown">
+        <span>會員中心</span>
+        <div class="dropdown-content">
+          <a href="/user_profile">會員資料</a>
+          <a href="#">會員資料修改(demo)</a>
+        </div>
+    </div>
+    <div class="dropdown">
+        <span>商品頁面</span>
+        <div class="dropdown-content">
+          <a href="/shop_page">商品: 廚具</a>
+          <a href="#">商品: 3C (demo)</a>
+          <a href="#">商品: 家電 (demo)</a>
+        </div>
+    </div>
+    <div class="dropdown">
+      <span>付款頁面</span>
+      <div class="dropdown-content">
+        <a href="/linepay_pay">Line Pay 頁面</a>
+        <a href="#">Apple Pay 頁面(demo)</a>
+        <a href="#">台灣 Pay 頁面(demo)</a>
+      </div>
+    </div>
+    <a href="#" class="logout-btn" id="logoutBtn">登出</a>
+  </div>
+
+  <div class="container">
+    <h1>付款頁面</h1>
+    <a class="btn" href="#" onclick="checkout()">前往 LINE Pay 付款</a>
+  </div>
+
+  <script>
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+      // 先呼叫後端登出 API
+      fetch('/oauth2/logout', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + localStorage.getItem('jwt_token')
+        }
+      })
+      .then(response => {
+        if (response.ok) {
+          // 清除應用內部儲存的 token
+          localStorage.removeItem('jwt_token');
+
+          // 開啟 Google 登出頁面 (在新視窗中)
+          var logoutWindow = window.open('https://accounts.google.com/Logout', '_blank', 'width=500,height=600');
+
+          // 延時 3 秒後關閉 Google 登出視窗，並重定向至應用的登入頁面
+          setTimeout(function(){
+            if (logoutWindow) {
+              logoutWindow.close();
+            }
+            window.location.href = '/user_login';  // 返回登入頁面
+          }, 3000);  // 根據需要調整延時時間
+        } else {
+          alert('登出失敗，請稍後再試。');
+        }
+      })
+      .catch(error => {
+        console.error('登出錯誤:', error);
+        alert('登出過程中發生錯誤，請稍後再試。');
+      });
+    });
+
+    $(document).ready(function () {
+      const token = localStorage.getItem("jwt_token");
+      if (!token) {
+        alert("請先登入！");
+        window.location.href = "/user_login";  // 根據實際情況調整
+        return;
+      }
+
+      sessionStorage.setItem("jwt_token", token); // 在支付前存到 sessionStorage
+
+      // 設定全域 AJAX 請求時附帶 Authorization header
+      $.ajaxSetup({
+        beforeSend: function(xhr) {
+          xhr.setRequestHeader("Authorization", "Bearer " + token);
+        }
+      });
+
+      // 檢查是否從 LINE Pay 回來，若 URL 有 transactionId，則進行付款確認
+      checkPaymentStatus();
+    });
+
+    // 付款請求，取得 LINE Pay 的付款連結
+    function checkout() {
+      const token = localStorage.getItem("jwt_token");
+      if (!token) {
+        alert("請先登入！");
+        window.location.href = "/user_login";
+        return;
+      }
+
+      $(".btn").prop("disabled", true).text("處理中...");  // 禁用按鈕並顯示處理中訊息
+
+      $.post("/request", function (data) {
+        if (data.info && data.info.paymentUrl && data.info.paymentUrl.web) {
+          let paymentUrl = data.info.paymentUrl.web;
+          let transactionId = data.info.transactionId;
+
+          // 設定付款完成後的返回網址，並帶上 JWT Token
+          let confirmUrl = window.location.origin + "/order_success?transactionId=" + transactionId + "&token=" + encodeURIComponent(token);
+
+          // 轉跳到 LINE Pay 付款頁面
+          window.location.href = paymentUrl + "&redirectUrl=" + encodeURIComponent(confirmUrl);
+        } else {
+          alert("付款請求失敗，請稍後再試");
+          $(".btn").prop("disabled", false).text("前往 LINE Pay 付款");
+        }
+      }).fail(function () {
+        alert("付款請求失敗，請稍後再試");
+        $(".btn").prop("disabled", false).text("前往 LINE Pay 付款");
+      });
+    }
+
+    // 付款確認：若 URL 中帶有 transactionId，則呼叫後端確認付款狀態
+    function checkPaymentStatus() {
+      let params = new URLSearchParams(window.location.search);
+      let transactionId = params.get("transactionId");
+      let token = params.get("jwt_token");  // 取得 JWT Token
+
+      if (token) {
+        localStorage.setItem("jwt_token", token); // 存入 localStorage，確保登入狀態
+        sessionStorage.removeItem("jwt_token"); // 移除 sessionStorage
+      }
+
+      if (transactionId) {
+        $.post("/redirect", { transactionId: transactionId }, function (response) {
+          if (response.success) {
+            alert("付款成功！");
+            window.location.href = "/order_success"; // 付款成功後導向訂單成功頁面
+          } else {
+            alert("付款確認失敗，請聯繫客服");
+          }
+        }).fail(function () {
+          alert("付款確認請求失敗，請稍後再試");
+        });
+      }
+    }
+  </script>
+
+</body>
+</html>
