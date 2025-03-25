@@ -1,5 +1,7 @@
 package linepaytest.LinePayDemo.Security;
 
+import java.util.ArrayList;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,22 +15,20 @@ import linepaytest.LinePayDemo.Model.Member;
 @Component
 public class MyUserDetailService implements UserDetailsService {
     
-    @Autowired
-    private MemberDao memberDao;
+    private final MemberDao memberDao;
     
-    // loadUserByUsername 方法會回傳一個 UserDetails 物件，這個 UserDetails 物件是用來驗證使用者身份的
+    public MyUserDetailService(MemberDao memberDao){
+        this.memberDao = memberDao;
+    }
+
+    // loadUserByUsername 方法會回傳一個 UserDetails 物件，這個 UserDetails 物件是用來驗證使用者身份
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-
         Member member = memberDao.getMemberByEmail(email);
         if (member == null) {
             throw new UsernameNotFoundException("User not found with email: " + email);
         }
-
-        return User.builder()
-                .username(member.getMemberName())
-                .password(member.getPassword())
-                .build();
+        return new User(member.getEmail(), member.getPassword(), new ArrayList<>());
     }
     
 }

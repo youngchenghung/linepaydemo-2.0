@@ -5,9 +5,11 @@ import lombok.*;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Cart {
-    private Integer cartId;
+public class Order {
+    private Integer orderId;
     private Integer memberId;
+    private Integer totalAmount;
+    private String status;
     private Timestamp createdAt;
     private Timestamp updatedAt;
 }

@@ -1,41 +1,18 @@
 package linepaytest.LinePayDemo.Model;
+import java.sql.Timestamp;
+import lombok.*;
 
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class Product {
-    
-    private String id;
-    private String name;
+    private String productId;
+    private String productName;
     private String imageUrl;
     private Integer price;
-
-    public Product(String id, String name, String imageUrl, int price) {
-        this.id = id;
-        this.name = name;
-        this.imageUrl = imageUrl;
-        this.price = price;
-    }
-    
-    public String getId() {
-        return id;
-    }
-    public void setId(String id) {
-        this.id = id;
-    }
-    public String getName() {
-        return name;
-    }
-    public void setName(String name) {
-        this.name = name;
-    }
-    public String getImageUrl() {
-            return imageUrl;
-        }
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-    public Integer getPrice() {
-        return price;
-    }
-    public void setPrice(Integer price) {
-        this.price = price;
-    }
+    private String descrption;
+    private String stockQuantity;
+    private Integer categoryId;
+    private Timestamp createdAt;
+    private Timestamp updatedAt;
 }

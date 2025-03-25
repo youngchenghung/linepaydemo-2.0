@@ -3,23 +3,22 @@ package linepaytest.LinePayDemo.Controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-
-import java.util.Map;
-
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import linepaytest.LinePayDemo.Dao.MemberDao;
 import linepaytest.LinePayDemo.Dao.Oauth2MemberDao;
@@ -27,21 +26,32 @@ import linepaytest.LinePayDemo.Model.Member;
 import linepaytest.LinePayDemo.Model.Oauth2Member;
 import linepaytest.LinePayDemo.Security.MyJwtUtil;
 
+import java.util.Map;
+import java.util.logging.Logger;
+
 
 @RestController
 public class MemberController {
     
-    @Autowired
-    private MemberDao memberDao;
+    private static final Logger logger = Logger.getLogger(MemberController.class.getName());
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
+    private final MemberDao memberDao;
+    private final PasswordEncoder passwordEncoder;
+    private final MyJwtUtil myJwtUtil;
+    private final AuthenticationManager authenticationManager;
 
-    @Autowired
-    private MyJwtUtil myJwtUtil;
-
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    public MemberController(
+                            MemberDao memberDao,
+                            PasswordEncoder passwordEncoder,
+                            MyJwtUtil myJwtUtil,
+                            AuthenticationManager authenticationManager
+                            ){
+        this.memberDao = memberDao;
+        this.passwordEncoder = passwordEncoder;
+        this.myJwtUtil = myJwtUtil;
+        this.authenticationManager = authenticationManager;
+    }
+                            
 
     @Autowired
     private Oauth2MemberDao oauth2MemberDao;
@@ -49,49 +59,53 @@ public class MemberController {
     // 註冊會員帳號
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody Member member) {
-        
-        // 將密碼加密
-        String hashedPassword = passwordEncoder.encode(member.getPassword());
-        // 將加密後的密碼設定回 member 物件
-        member.setPassword(hashedPassword);
-
         // 檢查是否有缺少必要欄位
-        if  (member.getMemberName().isBlank() || member.getMemberName() == null || 
-            member.getEmail().isBlank() || member.getEmail() == null || 
-            member.getPassword().isBlank() || member.getPassword() == null) {
+        System.out.println(member.getMemberName());
+        if (member.getMemberName() == null || member.getMemberName().isBlank() || 
+            member.getEmail() == null || member.getEmail().isBlank() || 
+            member.getPassword() == null || member.getPassword().isBlank()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Missing required fields"));
         }
         
         // 檢查是否已經註冊過
         Integer memberIdCheck = memberDao.getMemberIdByEmail(member.getEmail());
         if(memberIdCheck != null) {
-            System.out.println("Email already exists");
+            logger.warning("Email already exists: " + member.getEmail());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Email already exists"));
         }
 
+        // 將密碼加密
+        String hashedPassword = passwordEncoder.encode(member.getPassword());
+        // 將加密後的密碼設定回 member 物件
+        member.setPassword(hashedPassword);
+        
         // 會員未被注冊，新增註冊會員
-        else {
-            Integer memberId = memberDao.register(member);
-            System.out.println("Member ID: " + memberId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("memberId: " + memberId , "Created member successe"));
-        }
+        memberDao.register(member);
+        logger.info("New member registered: " + member.getEmail());
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("Email: " + member.getEmail() , "Created member successfully"));
     }
 
     // 登入會員帳號
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Member member){
         try {
+            // 會員資料傳入 authenticationManager，進行資料庫比對
             Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(member.getEmail(), member.getPassword()));
+            
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String email = userDetails.getUsername();
+            // 生成 JWT token
+            String token = myJwtUtil.generateToken(email, "JWT");
 
-            System.out.println("authhentication: " + authentication.getPrincipal());
-            System.out.println("Member email: " + member.getEmail());
-            String token = myJwtUtil.generateToken(member.getEmail(), "JWT");
+            Member loggedInMember = memberDao.getMemberByEmail(email);
+            logger.info("User logged in : " + loggedInMember);
+            logger.info("User : " + email + ", JWT token :" + token);
 
             return ResponseEntity.ok(Map.of("token", token));
         }
         catch (Exception e) {
-            // System.out.println("Invalid credentials" + e.getMessage());
+            logger.warning("Invalid credentials: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid credentials"));
         }
     }
@@ -115,6 +129,7 @@ public class MemberController {
             email = myJwtUtil.getEmailFromToken(token);
             authType = myJwtUtil.getAuthTypeFromToken(token);
         } catch (Exception e) {
+            logger.warning("Token validation failed: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Invalid token"));
         }
 
@@ -136,24 +151,52 @@ public class MemberController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("error", "Member not found"));
     }
 
+    // 刪除會員
+    @DeleteMapping("/profile/delete")
+    public ResponseEntity<?> deleteMember(@RequestParam Integer memberId) {
+        // 檢查 member_id 是否存在
+        Integer member_id = memberDao.getMemberIdByMemberId(memberId);
+        if (member_id == null){
+            return ResponseEntity.badRequest().body(Map.of("error", "member id is missing"));
+        }
+
+        // 判斷刪除回傳值是否成功
+        try{
+            Boolean deleteResult = memberDao.deleteMemberById(member_id);
+            if (deleteResult) {
+                logger.info("Member id : " + member_id + " deleted successfully");
+                return ResponseEntity.status(HttpStatus.OK).body(Map.of("memberId: " + member_id , "deleted successefully"));
+            }
+            else{
+                logger.warning("Delete failed: Member with ID " + member_id + " not found");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("Member id : " + member_id, " not found"));
+            }
+        }
+        catch (Exception e){
+            logger.warning("Error deleting member with ID " + member_id + ", " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Internal server error"));
+        }
+        
+    }
+    
     // OAuth2 會員登出
     @PostMapping("/oauth2/logout")
     public ResponseEntity<?> oauth2Logout(HttpServletRequest request, HttpServletResponse response) {
         String username = request.getRemoteUser();
-        System.out.println("OAuth2 Logout triggered for user: " + username);
+        logger.info("OAuth2 Logout triggered for user: " + username);
     
         // 清除 oauth2 Session
         HttpSession session = request.getSession(false);
         if (session != null) {
-            session.invalidate();  // 無效化 session，清理用戶登錄狀態
-            System.out.println("Session invalidated for user " + username);
+            session.invalidate();  // 清理使用者 session 登錄狀態
+            logger.info("Session invalidated for user " + username);
         } else {
-            System.out.println("No session found for user " + username);
+            logger.warning("No session found for user " + username);
         }
     
         // 狀態碼為 200，表示登出請求成功處理
         response.setStatus(HttpServletResponse.SC_OK);
-        System.out.println("User " + username + " logged out");
+        logger.info("User " + username + " logged out");
         return ResponseEntity.ok(Map.of("message", "登出成功"));
     }
 }

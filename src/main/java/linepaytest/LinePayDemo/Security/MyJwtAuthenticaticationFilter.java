@@ -42,7 +42,7 @@ public class MyJwtAuthenticaticationFilter extends OncePerRequestFilter {
                 // 取得 HTTP 請求的 URI 路徑
                 // 如果 URI 路徑是 /register 或 /login 就不用進行驗證，直接放行
                 String requestURI = request.getRequestURI();
-                if (requestURI.equals("/user_register") || requestURI.equals("/user_login")) {
+                if (requestURI.equals("/register") || requestURI.equals("/login")) {
                     filterChain.doFilter(request, response);
                     return;
                 }
