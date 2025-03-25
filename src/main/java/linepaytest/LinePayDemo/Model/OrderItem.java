@@ -4,9 +4,9 @@ import lombok.*;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CartItem {
-    private Integer cartItemId;
-    private Integer cartId;
+public class OrderItem {
+    private Integer orderItemId;
+    private Integer orderId;
     private Integer productId;
     private Integer quantity;
     private Integer price;

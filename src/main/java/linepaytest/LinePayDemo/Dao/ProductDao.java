@@ -1,11 +1,11 @@
-package linepaytest.LinePayDemo.Dao;
+// package linepaytest.LinePayDemo.Dao;
 
-import java.util.List;
+// import java.util.List;
 
-import linepaytest.LinePayDemo.Model.Product;
+// import linepaytest.LinePayDemo.Model.Product;
 
-public interface ProductDao {
+// public interface ProductDao {
     
-    // 取得商品
-    List<Product> getProducts();
-}
+//     // 取得商品
+//     List<Product> getProducts();
+// }

@@ -1,6 +1,7 @@
 package linepaytest.LinePayDemo.Security;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -23,23 +24,33 @@ import java.util.Arrays;
 @Configuration
 public class MySecurityConfig {
     
-    @Autowired
-    private MyJwtAuthenticaticationFilter myJwtAuthenticaticationFilter;
-    
-    @Autowired
-    private MyUserDetailService myUserDetailsService;
+    @Value("${domain.url}")
+    private String domainUrl;
 
-    @Autowired
-    private MyOidcUserService myOidcUserService;
 
-    @Autowired
-    private MyOauth2JwtSuccessHandler myOauth2JwtSuccessHandler;
+    private final MyJwtAuthenticaticationFilter myJwtAuthenticaticationFilter;
+    private final MyUserDetailService myUserDetailsService;
+    private final MyOidcUserService myOidcUserService;
+    private final MyOauth2JwtSuccessHandler myOauth2JwtSuccessHandler;
+
+    public MySecurityConfig(
+                            MyJwtAuthenticaticationFilter myJwtAuthenticaticationFilter,
+                            MyUserDetailService myUserDetailsService,
+                            MyOidcUserService myOidcUserService,
+                            MyOauth2JwtSuccessHandler myOauth2JwtSuccessHandler
+                            ){
+        this.myJwtAuthenticaticationFilter = myJwtAuthenticaticationFilter;
+        this.myUserDetailsService = myUserDetailsService;
+        this.myOidcUserService = myOidcUserService;
+        this.myOauth2JwtSuccessHandler = myOauth2JwtSuccessHandler;
+    }
+
 
     // 設定密碼加密器
     // 這裡使用 BCryptPasswordEncoder 來加密密碼
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(12);
+        return new BCryptPasswordEncoder();
     }
 
     // 設定 AuthenticationManager
@@ -73,7 +84,7 @@ public class MySecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)) // 使用session當oauth2需要時才建立 
                 .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/register","/user_register", "/user_register.html", "/login", "/user_login", "/user_login.html",
-                                    "/user_profile", "/user_profile.html", "shop_page", "/shop_page.html", 
+                                    "/user_profile", "/user_profile.html", "shop_page", "/shop_page.html", "/profile/delete", "findIdByName",
                                     "/linepay_pay", "/linepay_pay.html", "/redirect", "/order_success", "/order_success.html").permitAll() 
                 .requestMatchers("/profile").authenticated() // 這裡的 user_profile 接口
                 .requestMatchers("/products", "/cart/add", "/cart/items", "/cart/clear").authenticated() // 這裡的 shop_page 接口
@@ -95,7 +106,7 @@ public class MySecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         // 允許來自這些來源的跨域請求
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:8080", "http://127.0.0.1:8080"));
+        configuration.setAllowedOrigins(Arrays.asList(domainUrl));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true); // 如有需要
