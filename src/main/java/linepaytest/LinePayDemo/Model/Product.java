@@ -6,12 +6,12 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Product {
-    private String productId;
+    private Integer productId;
     private String productName;
     private String imageUrl;
     private Integer price;
-    private String descrption;
-    private String stockQuantity;
+    private String description;
+    private Integer stockQuantity;
     private Integer categoryId;
     private Timestamp createdAt;
     private Timestamp updatedAt;
