@@ -1,16 +1,16 @@
-// package linepaytest.LinePayDemo.Dao;
+package linepaytest.LinePayDemo.Dao;
 
-// import java.util.List;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
 
-// import linepaytest.LinePayDemo.Model.CartItem;
+import linepaytest.LinePayDemo.Model.Cart;
 
-// public interface CartDao {
+@Mapper
+public interface CartDao {
     
-//     void addItem(CartItem items);
-
-//     // 取得購物車內容
-//     List<CartItem> getCartItems();
-
-//     // 清除購物車內容
-//     void clearCart();
-// }
+    // 新增購物車
+    @Insert("INSERT INTO cart (memberId) VALUES (#{memberId})")
+    @Options(useGeneratedKeys = true, keyProperty = "cartId")
+    void insertCart(Cart cart);
+}

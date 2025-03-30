@@ -86,7 +86,7 @@ public class MySecurityConfig {
                 .requestMatchers("/", "/register","/user_register", "/user_register.html", "/login", "/user_login", "/user_login.html",
                                     "/user_profile", "/user_profile.html", "shop_page", "/shop_page.html", "/profile/delete", "findIdByName",
                                     "/linepay_pay", "/linepay_pay.html", "/redirect", "/order_success", "/order_success.html",
-                                    "/api/product/**").permitAll() 
+                                    "/api/product/**", "/api/redis/**", "/api/cart/**").permitAll() 
                 .requestMatchers("/profile").authenticated() // 這裡的 user_profile 接口
                 .requestMatchers("/products", "/cart/add", "/cart/items", "/cart/clear").authenticated() // 這裡的 shop_page 接口
                 .requestMatchers("/request").authenticated() // 這裡的 linepay_pay 接口
