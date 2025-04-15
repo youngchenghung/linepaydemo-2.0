@@ -52,7 +52,7 @@ public class ProductController {
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<List<Product>> getProductByCategory(@PathVariable Integer categoryId,
                                                 @RequestParam(defaultValue = "0") @Min(0) int page,
-                                                @RequestParam(defaultValue = "3") @Min(1) int size,
+                                                @RequestParam(defaultValue = "5") @Min(1) int size,
                                                 @RequestParam(defaultValue = "productId") String sortBy,
                                                 @RequestParam(defaultValue = "ASC") String sortOrder
                                                 ){
@@ -89,12 +89,11 @@ public class ProductController {
     @GetMapping("/search/priceRange")
     public ResponseEntity<List<Product>> searchProductsByPriceRange(@RequestParam Integer minPrice,
                                                                     @RequestParam Integer maxPrice,
-                                                                    @RequestParam(defaultValue = "price") String sortBy,
                                                                     @RequestParam(defaultValue = "ASC") String sortOrder,
                                                                     @RequestParam(defaultValue = "0") int page,
                                                                     @RequestParam(defaultValue = "3") int size){
         logger.info("Search product by price minPrice={}, maxPrice={} ", minPrice, maxPrice);
-        List<Product> products = productService.searchProductsByPriceRange(minPrice, maxPrice, sortBy, sortOrder, page, size);
+        List<Product> products = productService.searchProductsByPriceRange(minPrice, maxPrice, sortOrder, page, size);
         logger.info("Search product={} ", products);
         return ResponseEntity.ok(products);
     }

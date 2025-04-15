@@ -36,9 +36,9 @@ public class ProductService {
     }
 
     // 根據價格範圍查詢商品
-    public List<Product> searchProductsByPriceRange(Integer minPrice, Integer maxPrice, String sortBy, String sortOrder, int page, int size){
+    public List<Product> searchProductsByPriceRange(Integer minPrice, Integer maxPrice, String sortOrder, int page, int size){
         int offset = page * size;
-        return productDao.searchProductsByPriceRange(minPrice, maxPrice, sortBy, sortOrder, size, offset);
+        return productDao.searchProductsByPriceRange(minPrice, maxPrice, sortOrder, size, offset);
     }
 
     // 查詢單一商品

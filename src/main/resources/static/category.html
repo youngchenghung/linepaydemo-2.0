@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>商品列表</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .product {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin: 10px 0;
+    }
+    .product img {
+      max-width: 100px;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>商品列表</h1>
+
+  <!-- 顯示商品數量 -->
+  <div id="productCount">載入中...</div>
+
+  <!-- 搜尋商品名稱 -->
+  <div>
+    <input type="text" id="searchName" placeholder="輸入商品名稱">
+    <button onclick="searchByName()">搜尋名稱</button>
+  </div>
+
+  <!-- 根據價格範圍查詢 -->
+  <div>
+    <label>價格範圍：</label>
+    <input type="number" id="minPrice" placeholder="最低價">
+    <input type="number" id="maxPrice" placeholder="最高價">
+    <select id="priceSortOrder">
+      <option value="ASC">價格低到高</option>
+      <option value="DESC">價格高到低</option>
+    </select>
+    <button onclick="searchByPrice()">搜尋價格</button>
+  </div>
+
+  <!-- 排序選擇 -->
+  <div>
+    <label>排序欄位：</label>
+    <select id="sortBy">
+      <option value="productName">商品名稱</option>
+      <option value="price">價格</option>
+    </select>
+    <select id="sortOrder">
+      <option value="ASC">升序</option>
+      <option value="DESC">降序</option>
+    </select>
+    <button onclick="loadProducts()">重新載入排序</button>
+  </div>
+
+  <!-- 商品清單 -->
+  <div id="productList"></div>
+
+  <!-- 分頁控制 -->
+  <div>
+    <button onclick="prevPage()">上一頁</button>
+    <span id="pageInfo"></span>
+    <button onclick="nextPage()">下一頁</button>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoryId = urlParams.get('categoryId');
+    let currentPage = 0;
+    const pageSize = 10;
+
+    async function fetchProductCount() {
+      const res = await fetch(`/api/product/productCount/${categoryId}`);
+      const count = await res.json();
+      document.getElementById("productCount").innerText = `共有 ${count} 項商品`;
+    }
+
+    async function loadProducts() {
+      const sortBy = document.getElementById("sortBy").value;
+      const sortOrder = document.getElementById("sortOrder").value;
+
+      const res = await fetch(`/api/product/category/${categoryId}?page=${currentPage}&size=${pageSize}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
+      const products = await res.json();
+
+      renderProducts(products);
+      document.getElementById("pageInfo").innerText = `第 ${currentPage + 1} 頁`;
+    }
+
+    function renderProducts(products) {
+      const list = document.getElementById("productList");
+      list.innerHTML = "";
+
+      products.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "product";
+        div.innerHTML = `
+          <h3>${p.productName}</h3>
+          <img src="${p.imageUrl}" alt="${p.productName}">
+          <p>價格：$${p.price}</p>
+          <p>${p.description}</p>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function prevPage() {
+      if (currentPage > 0) {
+        currentPage--;
+        loadProducts();
+      }
+    }
+
+    function nextPage() {
+      currentPage++;
+      loadProducts();
+    }
+
+    async function searchByName() {
+      const name = document.getElementById("searchName").value;
+      const sortBy = document.getElementById("sortBy").value;
+      const sortOrder = document.getElementById("sortOrder").value;
+
+      const res = await fetch(`/api/product/search?productName=${name}&page=${currentPage}&size=${pageSize}&sortBy=${sortBy}&sortOrder=${sortOrder}`);
+      const products = await res.json();
+      renderProducts(products);
+      document.getElementById("pageInfo").innerText = `搜尋結果（第 ${currentPage + 1} 頁）`;
+    }
+
+    async function searchByPrice() {
+      const minPrice = document.getElementById("minPrice").value;
+      const maxPrice = document.getElementById("maxPrice").value;
+      const sortOrder = document.getElementById("priceSortOrder").value;
+
+      const res = await fetch(`/api/product/search/priceRange?minPrice=${minPrice}&maxPrice=${maxPrice}&page=${currentPage}&size=${pageSize}&sortOrder=${sortOrder}`);
+      const products = await res.json();
+      renderProducts(products);
+      document.getElementById("pageInfo").innerText = `價格查詢結果（第 ${currentPage + 1} 頁）`;
+    }
+
+    // 頁面初始化
+    fetchProductCount();
+    loadProducts();
+  </script>
+</body>
+</html>

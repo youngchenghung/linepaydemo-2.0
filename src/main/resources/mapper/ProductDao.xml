@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="linepaytest.LinePayDemo.Dao.ProductDao">
+
+    <!-- 根據分類獲取商品 (分頁 & 排序) -->
+    <select id="getProductsByCategory" resultType="linepaytest.LinePayDemo.Model.Product">
+        SELECT * FROM product
+        WHERE categoryId = #{categoryId}
+        <choose>
+            <when test="'price'.equals(sortBy)">
+                ORDER BY price
+            </when>
+            <when test="'productId'.equals(sortBy)">
+                ORDER BY productId
+            </when>
+            <otherwise>
+                ORDER BY productName
+            </otherwise>
+        </choose>
+        <choose>
+            <when test="'DESC'.equals(sortOrder)">
+                DESC
+            </when>
+            <otherwise>
+                ASC
+            </otherwise>
+        </choose>
+        LIMIT #{size}
+        OFFSET #{offset}
+    </select>
+
+    <!-- 查詢商品數量 -->
+    <select id="countProductsByCategory" resultType="int">
+        SELECT COUNT(*) FROM product WHERE categoryId = #{categoryId}
+    </select>
+
+    <!-- 搜尋商品名稱 -->
+    <select id="searchProductsByName" resultType="linepaytest.LinePayDemo.Model.Product">
+        SELECT * FROM product
+        WHERE productName LIKE CONCAT('%', #{productName}, '%')
+        ORDER BY productName
+        <choose>
+            <when test="'DESC.euqals(sortOrder)">
+                DESC
+            </when>
+            <otherwise>
+                ASC
+            </otherwise>
+        </choose>
+        LIMIT #{size}
+        OFFSET #{offset}
+    </select>
+
+    <!-- 根據價格範圍查詢商品 -->
+    <select id="searchProductsByPriceRange" resultType="linepaytest.LinePayDemo.Model.Product">
+        SELECT * FROM product
+        WHERE price BETWEEN #{minPrice} AND #{maxPrice}
+        ORDER BY price
+        <choose>
+            <when test="sortOrder == 'DESC'">
+                DESC 
+            </when>
+            <otherwise>
+                ASC
+            </otherwise>
+        </choose>
+        LIMIT #{size} 
+        OFFSET #{offset}
+    </select>
+
+    <!-- 查詢單一商品 -->
+    <select id="searchProductById" resultType="linepaytest.LinePayDemo.Model.Product">
+        SELECT * FROM product WHERE productId = #{productId}
+    </select>
+
+    <!-- 購物車商品編號查詢商品資料 -->
+    <select id="getProductItemByCartItem" resultType="linepaytest.LinePayDemo.Model.Product">
+        SELECT * FROM product WHERE productId = #{productId}
+    </select>
+
+</mapper>
